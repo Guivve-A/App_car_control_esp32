@@ -92,17 +92,17 @@ La comunicación es por texto UTF‑8. Cada comando se envía como:
 
 ```mermaid
 flowchart LR
-  UI[Jetpack Compose UI\nMainActivity] -->|events| VM[BluexViewModel]
-  VM -->|sendCommand()| BT[BluetoothRepository\nRFCOMM/SPP]
-  BT -->|texto + \\n| ESP[ESP32\nCar-ESP32]
+  UI["Jetpack Compose UI<br/>MainActivity"] -->|events| VM["BluexViewModel"]
+  VM -->|sendCommand| BT["BluetoothRepository<br/>RFCOMM/SPP"]
+  BT -->|texto + newline| ESP["ESP32<br/>Car-ESP32"]
   ESP -->|mensajes| BT
   BT -->|incomingMessages| VM
 
-  VM -->|TTS:...| USE[HandleEsp32MessageUseCase]
-  USE --> GM[GreetingManager]
-  GM --> PIPER[PiperTtsEngine\nJNI + ONNX Runtime]
-  PIPER --> DSP[WallEAudioProcessor\nDSP]
-  DSP --> PLAY[RobotAudioPlayer\nAudioTrack + EQ]
+  VM -->|TTS| USE["HandleEsp32MessageUseCase"]
+  USE --> GM["GreetingManager"]
+  GM --> PIPER["PiperTtsEngine<br/>JNI + ONNX Runtime"]
+  PIPER --> DSP["WallEAudioProcessor<br/>DSP"]
+  DSP --> PLAY["RobotAudioPlayer<br/>AudioTrack + EQ"]
 ```
 
 ---
