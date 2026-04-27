@@ -15,11 +15,14 @@ import kotlinx.coroutines.flow.asStateFlow
 import java.text.SimpleDateFormat
 import java.util.*
 
+enum class HeadPosition { CENTER, LEFT, RIGHT }
+
 enum class AppMode(val displayName: String, val espCommand: String) {
     STANDBY("Inicio", "STANDBY"),
     DRIVING("Control", "DRIVING"),
     MODE1("Saludos", "MODE1"),
-    MODE2("Telemetria", "MODE2");
+    MODE2("Telemetria", "MODE2"),
+    MOVIMIENTOS("Movimientos", "MOVIMIENTOS");
 }
 
 class BluexViewModel(application: Application) : AndroidViewModel(application) {
@@ -48,6 +51,12 @@ class BluexViewModel(application: Application) : AndroidViewModel(application) {
     private val _eyesOn = MutableStateFlow(false)
     val eyesOn = _eyesOn.asStateFlow()
 
+    private val _armsUp = MutableStateFlow(false)
+    val armsUp = _armsUp.asStateFlow()
+
+    private val _headPosition = MutableStateFlow(HeadPosition.CENTER)
+    val headPosition = _headPosition.asStateFlow()
+
     private val _lcdText = MutableStateFlow("")
     val lcdText = _lcdText.asStateFlow()
 
@@ -63,6 +72,7 @@ class BluexViewModel(application: Application) : AndroidViewModel(application) {
         startClock()
         observeIncomingMessages()
         observeVoiceCommands()
+        observeConnectionForServoReset()
         voiceControl.initialize()
     }
 
@@ -180,6 +190,36 @@ class BluexViewModel(application: Application) : AndroidViewModel(application) {
     fun toggleEyes(on: Boolean) {
         _eyesOn.value = on
         sendCommand(if (on) "ON" else "OFF")
+    }
+
+    fun toggleArms() {
+        _armsUp.value = !_armsUp.value
+        sendCommand("BRAZOS")
+    }
+
+    fun setHeadPosition(position: HeadPosition) {
+        _headPosition.value = position
+        val cmd = when (position) {
+            HeadPosition.LEFT -> "CABEZA_IZQ"
+            HeadPosition.CENTER -> "CABEZA_CEN"
+            HeadPosition.RIGHT -> "CABEZA_DER"
+        }
+        sendCommand(cmd)
+    }
+
+    private fun observeConnectionForServoReset() {
+        viewModelScope.launch {
+            bluetoothRepo.connectionState.collect { state ->
+                when (state) {
+                    is ConnectionState.Connected,
+                    is ConnectionState.Disconnected -> {
+                        _armsUp.value = false
+                        _headPosition.value = HeadPosition.CENTER
+                    }
+                    else -> {}
+                }
+            }
+        }
     }
 
     fun updateLcdText(text: String) {

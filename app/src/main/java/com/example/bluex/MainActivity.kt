@@ -72,6 +72,8 @@ fun BluexApp(viewModel: BluexViewModel = viewModel()) {
     val waitingForGreeting by viewModel.waitingForGreeting.collectAsState()
     val isVoiceListening by viewModel.voiceControl.isListening.collectAsState()
     val recognizedText by viewModel.voiceControl.recognizedText.collectAsState()
+    val armsUp by viewModel.armsUp.collectAsState()
+    val headPosition by viewModel.headPosition.collectAsState()
 
     val isConnected = connectionState is ConnectionState.Connected
 
@@ -192,6 +194,12 @@ fun BluexApp(viewModel: BluexViewModel = viewModel()) {
                                 tiempo = tiempo,
                                 nombre = nombre,
                                 onSync = { viewModel.syncTelemetry() }
+                            )
+                            AppMode.MOVIMIENTOS -> MovimientosScreen(
+                                armsUp = armsUp,
+                                headPosition = headPosition,
+                                onArmsToggle = { viewModel.toggleArms() },
+                                onHeadPositionChange = { viewModel.setHeadPosition(it) }
                             )
                         }
                     }
@@ -975,6 +983,204 @@ fun TelemetryScreen(
         )
     }
 }
+
+// ─── Movimientos Screen ─────────────────────────────────────
+
+@Composable
+fun MovimientosScreen(
+    armsUp: Boolean,
+    headPosition: HeadPosition,
+    onArmsToggle: () -> Unit,
+    onHeadPositionChange: (HeadPosition) -> Unit
+) {
+    val view = LocalView.current
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            "Movimientos",
+            style = MaterialTheme.typography.headlineMedium,
+            color = BluexTextPrimary,
+            fontWeight = FontWeight.Bold
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Section 1: Brazos
+        GlassCard(
+            modifier = Modifier.fillMaxWidth(),
+            contentPadding = 20.dp
+        ) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    "Brazos",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = BluexTextSecondary
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+
+                val armsContainerColor by animateColorAsState(
+                    targetValue = if (armsUp) BluexAccent else Color.Transparent,
+                    animationSpec = tween(250),
+                    label = "armsContainer"
+                )
+                val armsContentColor by animateColorAsState(
+                    targetValue = if (armsUp) Color.White else BluexTextPrimary,
+                    animationSpec = tween(250),
+                    label = "armsContent"
+                )
+                val armsBorderColor by animateColorAsState(
+                    targetValue = if (armsUp) BluexAccent else GlassBorder,
+                    animationSpec = tween(250),
+                    label = "armsBorder"
+                )
+
+                Button(
+                    onClick = {
+                        view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                        onArmsToggle()
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(64.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = armsContainerColor,
+                        contentColor = armsContentColor
+                    ),
+                    border = BorderStroke(1.dp, armsBorderColor)
+                ) {
+                    Icon(
+                        imageVector = if (armsUp) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                        contentDescription = null,
+                        modifier = Modifier.size(22.dp)
+                    )
+                    Spacer(Modifier.width(10.dp))
+                    Text(
+                        "Mover Brazos",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    if (armsUp) "Brazos levantados" else "Brazos en reposo",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (armsUp) BluexAccent else BluexTextTertiary
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Section 2: Cabeza
+        GlassCard(
+            modifier = Modifier.fillMaxWidth(),
+            contentPadding = 20.dp
+        ) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    "Cabeza",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = BluexTextSecondary
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    HeadButton(
+                        label = "← Izquierda",
+                        isSelected = headPosition == HeadPosition.LEFT,
+                        modifier = Modifier.weight(1f),
+                        onClick = {
+                            view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                            onHeadPositionChange(HeadPosition.LEFT)
+                        }
+                    )
+                    HeadButton(
+                        label = "Centro",
+                        isSelected = headPosition == HeadPosition.CENTER,
+                        modifier = Modifier.weight(1f),
+                        onClick = {
+                            view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                            onHeadPositionChange(HeadPosition.CENTER)
+                        }
+                    )
+                    HeadButton(
+                        label = "Derecha →",
+                        isSelected = headPosition == HeadPosition.RIGHT,
+                        modifier = Modifier.weight(1f),
+                        onClick = {
+                            view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                            onHeadPositionChange(HeadPosition.RIGHT)
+                        }
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+    }
+}
+
+@Composable
+fun HeadButton(
+    label: String,
+    isSelected: Boolean,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    val bgColor by animateColorAsState(
+        targetValue = if (isSelected) BluexAccent else Color.Transparent,
+        animationSpec = tween(250),
+        label = "headBg"
+    )
+    val textColor by animateColorAsState(
+        targetValue = if (isSelected) Color.White else BluexTextSecondary,
+        animationSpec = tween(250),
+        label = "headText"
+    )
+    val borderColor by animateColorAsState(
+        targetValue = if (isSelected) BluexAccent else GlassBorder,
+        animationSpec = tween(250),
+        label = "headBorder"
+    )
+
+    Button(
+        onClick = onClick,
+        modifier = modifier.height(48.dp),
+        shape = RoundedCornerShape(14.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = bgColor,
+            contentColor = textColor
+        ),
+        border = BorderStroke(1.dp, borderColor)
+    ) {
+        Text(
+            label,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+            textAlign = TextAlign.Center,
+            maxLines = 1
+        )
+    }
+}
+
+// ─── Telemetry Glass Card ────────────────────────────────────
 
 @Composable
 fun TelemetryGlassCard(
