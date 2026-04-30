@@ -37,6 +37,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -353,9 +354,11 @@ fun ModeTabBar(currentMode: AppMode, onModeSelected: (AppMode) -> Unit) {
             ) {
                 Text(
                     text = mode.displayName,
-                    style = MaterialTheme.typography.labelMedium,
+                    style = MaterialTheme.typography.labelSmall,
                     color = animatedTextColor,
-                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
+                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
         }

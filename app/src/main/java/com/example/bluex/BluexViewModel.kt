@@ -179,10 +179,10 @@ class BluexViewModel(application: Application) : AndroidViewModel(application) {
     fun switchMode(mode: AppMode) {
         _currentMode.value = mode
         if (bluetoothRepo.connectionState.value is ConnectionState.Connected) {
-            if (mode == AppMode.MODE2) {
-                syncTelemetry()
-            } else {
-                sendCommand(mode.espCommand)
+            when (mode) {
+                AppMode.MODE2 -> syncTelemetry()
+                AppMode.MOVIMIENTOS -> Unit  // servo commands are sent individually
+                else -> sendCommand(mode.espCommand)
             }
         }
     }
